@@ -35,8 +35,8 @@ api.get('/', (request, reply) => {
 
 api.get('/:channel', async (request, reply) => {
   const channel = (request.params as { channel: string }).channel.toLowerCase();
-  const SUNDAY_CURRENT = dayjs().day(0).hour(0).minute(0).second(0).millisecond(0).unix()
-  const SUNDAY_LAST = dayjs().day(-7).hour(0).minute(0).second(0).millisecond(0).unix()
+  const LastWeekStart = dayjs().startOf('w').subtract(7,'d').unix()
+  const ThisWeekStart = dayjs().startOf('w').unix()
 
   if (!database.has(channel)) {
     reply.statusCode = 404;
@@ -44,7 +44,7 @@ api.get('/:channel', async (request, reply) => {
     return;
   }
 
-  const items = (await database.get(channel)?.fetch({ 'created?gt': (SUNDAY_LAST) }))?.items as unknown as Array<DetaItem>
+  const items = (await database.get(channel)?.fetch({ 'created?gte': (LastWeekStart) }))?.items as unknown as Array<DetaItem>
   const data = {
     current: {
       sum: 0,
@@ -59,9 +59,9 @@ api.get('/:channel', async (request, reply) => {
   }
 
   for (const item of items) {
-    const p = item.created >= SUNDAY_CURRENT ? 'current' : 'last';
-    data[p].count += 1;
-    data[p].sum += item.viewers;
+    const p = item.created >= ThisWeekStart ? data.current : data.last;
+    p.count += 1;
+    p.sum += item.viewers;
   }
 
   data.current.average = data.current.sum / data.current.count;
