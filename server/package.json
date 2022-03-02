@@ -2,12 +2,12 @@
   "name": "server",
   "version": "1.0.0",
   "description": "",
-  "main": "dist/server.js",
+  "main": "dist/main.js",
   "scripts": {
-    "dev": "tsc -w & nodemon dist/server.js",
-    "serve": "cls && nodemon dist/server.js",
+    "dev": "tsc -w & nodemon dist/main.js",
+    "serve": "cls && nodemon dist/main.js",
     "build": "tsc",
-    "start": "node dist/server.js",
+    "start": "node dist/main.js",
     "watch": "concurrently --kill-others \"npm run dev\" \"npm run serve\""
   },
   "author": "Daniel Vondra (http://danielvondra.tk/)",
