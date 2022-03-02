@@ -38,39 +38,38 @@ api.get('/:channel', async (request, reply) => {
   const SUNDAY_CURRENT = dayjs().day(0).hour(0).minute(0).second(0).millisecond(0).unix()
   const SUNDAY_LAST = dayjs().day(-7).hour(0).minute(0).second(0).millisecond(0).unix()
 
-  if (database.has(channel)) {
-    const items = (await database.get(channel)?.fetch({ 'created?gt': (SUNDAY_LAST) }))?.items as unknown as Array<DetaItem>
-
-    const data = {
-      current: {
-        sum: 0,
-        count: 0,
-        average: -1,
-      },
-      last: {
-        sum: 0,
-        count: 0,
-        average: -1,
-      }
-    }
-
-
-    for (const item of items) {
-      const p = item.created >= SUNDAY_CURRENT ? 'current' : 'last';
-      data[p].count += 1;
-      data[p].sum += item.viewers;
-    }
-
-    data.current.average = data.current.sum / data.current.count;
-    data.last.average = data.last.sum / data.last.count;
-    reply.send({
-      data: { channel, ...data },
-      error: null,
-    })
-  } else {
+  if (!database.has(channel)) {
     reply.statusCode = 404;
     reply.send({ data: null, error: 'no such channel' })
+    return;
   }
+
+  const items = (await database.get(channel)?.fetch({ 'created?gt': (SUNDAY_LAST) }))?.items as unknown as Array<DetaItem>
+  const data = {
+    current: {
+      sum: 0,
+      count: 0,
+      average: -1,
+    },
+    last: {
+      sum: 0,
+      count: 0,
+      average: -1,
+    }
+  }
+
+  for (const item of items) {
+    const p = item.created >= SUNDAY_CURRENT ? 'current' : 'last';
+    data[p].count += 1;
+    data[p].sum += item.viewers;
+  }
+
+  data.current.average = data.current.sum / data.current.count;
+  data.last.average = data.last.sum / data.last.count;
+  reply.send({
+    data: { channel, ...data },
+    error: null,
+  })
 })
 
 
