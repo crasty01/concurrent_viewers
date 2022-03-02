@@ -4,10 +4,11 @@
   "description": "",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "tsc -w",
+    "dev": "tsc -w & nodemon dist/server.js",
     "serve": "cls && nodemon dist/server.js",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "watch": "concurrently --kill-others \"npm run dev\" \"npm run serve\""
   },
   "author": "Daniel Vondra (http://danielvondra.tk/)",
   "license": "MIT",

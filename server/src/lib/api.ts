@@ -68,6 +68,7 @@ api.get('/:channel', async (request, reply) => {
       error: null,
     })
   } else {
+    reply.statusCode = 404;
     reply.send({ data: null, error: 'no such channel' })
   }
 })
