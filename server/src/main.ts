@@ -20,14 +20,15 @@ async function main(){
 
     new CronJob('* * * * *', async () => {
         console.log(`[${new Date()}]job ran`)
-        const ts=new Date()
+        const ts = new Date()
+        
         //TODO: giveth twitch api a list of channels
-        db.GetChannelList().forEach(async (channel) => {
+        for (const channel of await db.GetChannelList()){
           const data = (await api.getStreambyLogin(channel)).data as Array<{user_login:string,viewer_count:number}>;
           for(const x of data){
             db.AddMetric(x.user_login,ts,x.viewer_count)
           }
-        })
+        }
       }, null, true);
 }
 

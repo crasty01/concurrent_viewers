@@ -1,5 +1,5 @@
 import { Api } from "$/lib/twitch";
-import { DatabaseService,ToPayload } from "./Interfaces/databaseService";
+import { DatabaseService, ToPayload } from "./Interfaces/databaseService";
 import Fastify, { FastifyInstance } from "fastify";
 import fastifyCors from "fastify-cors";
 import { getIsoYearWeek } from "$/lib/util";
@@ -21,8 +21,8 @@ export class ApiServer {
       origin: "*",
     });
 
-    api.get("/", (request, reply) => {
-      const list = this.#dbService.GetChannelList().map((channel) => ({
+    api.get("/", async (request, reply) => {
+      const list = (await this.#dbService.GetChannelList()).map((channel) => ({
         channel,
         link_secure: `https://${request.hostname}/${channel}`,
         link_unsecure: `http://${request.hostname}/${channel}`,
@@ -35,28 +35,32 @@ export class ApiServer {
         request.params as { channel: string }
       ).channel.toLowerCase();
 
-
       const IsoWeekYear = getIsoYearWeek(dayjs());
-      const lastIsoWeekYear  = getIsoYearWeek(dayjs().subtract(7,'d'));
-      const channelData = this.#dbService.GetChannelMetric(channel);
+      const lastIsoWeekYear = getIsoYearWeek(dayjs().subtract(7, "d"));
+      const channelData = await this.#dbService.GetChannelMetric(channel);
       if (!channelData) {
         reply.code(404);
         return;
       }
 
-      const currStats=channelData.WeeklyMetrics[IsoWeekYear] || {count:0,sum:0}
-      const prevStats=channelData.WeeklyMetrics[lastIsoWeekYear] || {count:0,sum:0}
+      const currStats = channelData.WeeklyMetrics[IsoWeekYear] || {
+        count: 0,
+        sum: 0,
+      };
+      const prevStats = channelData.WeeklyMetrics[lastIsoWeekYear] || {
+        count: 0,
+        sum: 0,
+      };
 
       reply.send({
-        current:ToPayload(currStats),
-        last:ToPayload(prevStats)
-    })
-
+        current: ToPayload(currStats),
+        last: ToPayload(prevStats),
+      });
     });
     return api;
   }
 
-  public Listen(port: string|number) {
+  public Listen(port: string | number) {
     this.#app.listen(port, (err, address) => {
       if (err) this.#app.log.error(err);
       console.log(`api running at ${address}`);

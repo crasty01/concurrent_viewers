@@ -16,7 +16,7 @@ export class InMemoryDb implements DatabaseService {
       };
     }
   }
-  GetChannelMetric(channelName: string) {
+  async GetChannelMetric(channelName: string) {
     const data = this.#internalData[channelName];
     if (!data) {
       return null;
@@ -24,13 +24,13 @@ export class InMemoryDb implements DatabaseService {
     return data;
   }
 
-  GetChannelList() {
+  async GetChannelList() {
     return Object.keys(this.#internalData);
   }
 
-  AddMetric(channelName: string, timestamp: Date, count: number) {
+  async AddMetric(channelName: string, timestamp: Date, count: number) {
     const isoYearWeek = getIsoYearWeek(dayjs(timestamp));
-    const ch = this.GetChannelMetric(channelName);
+    const ch = await this.GetChannelMetric(channelName);
     if (!ch) {
       // feng sui would ask us to throw exception here
       return false;
