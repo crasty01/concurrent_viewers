@@ -3,7 +3,7 @@ const BASE_URL = import.meta.env.DEV ? 'http://localhost:8080' : 'http://localho
 
 
 export interface Data {
-  channel: string;
+  // channel: string;
   current: {
     sum: number;
     count: number;
@@ -22,7 +22,15 @@ export interface Response {
 }
 
 export const fetchData = async (channel: string) => {
-  const { data, error } = await (await fetch(`${BASE_URL}/${channel}`)).json() as Response;
-  if (error) throw new Error(error);
-  return data;
+  const response = await fetch(`${BASE_URL}/${channel}`);
+  if (!response.ok){
+    switch (response.status){
+    case 404:
+      throw new Error("not found");
+    default:
+      
+      throw new Error()
+    }
+  }
+  return await response.json() as Data;
 }
