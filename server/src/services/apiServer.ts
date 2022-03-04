@@ -10,10 +10,10 @@ export class ApiServer {
 
   constructor(dbService: DetaDatabaseService) {
     this.#dbService = dbService;
-    this.#app = this.prepareServer();
+    this.#app = this.#prepareServer();
   }
 
-  private prepareServer() {
+  #prepareServer() {
     const api = Fastify({ logger: false });
 
     api.register(fastifyCors, {
