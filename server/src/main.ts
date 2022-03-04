@@ -6,10 +6,11 @@ import { env } from '$/lib/env';
 import { CronJob } from 'cron';
 import { Api } from './lib/twitch';
 import { ApiServer } from './services/apiServer';
+import { DetaDatabaseService } from './services/DetaDb';
 import { InMemoryDb } from "./services/inMemoryDb";
 const cannels=['cdubya719']
 
-const db = new InMemoryDb(cannels.map(x=>x.toLowerCase()))
+const db = new DetaDatabaseService(env.DETA_PROJECT_KEY, cannels.map(x=>x.toLowerCase()))
 
 new ApiServer(db).Listen(env.PORT)
 
