@@ -52,7 +52,7 @@ export class Api {
     if (res.status === 200) return res;
     throw new Error(`[Api#fetch] : ${res.status} - ${res.statusText}`);
   }
-
+//TODO: maketh it accept a list of strings
   async getStreambyLogin(user_login: string) {
     return (await this.#fetch(`streams?user_login=${user_login}`)).json()
   }
