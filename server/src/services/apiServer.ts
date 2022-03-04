@@ -40,6 +40,7 @@ export class ApiServer {
       const channelData = await this.#dbService.GetChannelMetric(channel);
       if (!channelData) {
         reply.code(404);
+        reply.send();
         return;
       }
 
