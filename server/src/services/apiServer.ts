@@ -1,15 +1,14 @@
-import { Api } from "$/lib/twitch";
-import { DatabaseService, ToPayload } from "./Interfaces/databaseService";
 import Fastify, { FastifyInstance } from "fastify";
 import fastifyCors from "fastify-cors";
-import { getIsoYearWeek } from "$/lib/util";
 import dayjs from "dayjs";
+import { getIsoYearWeek, toPayload } from "$/lib/util";
+import { DetaDatabaseService } from '$/services/DetaDb'
 
 export class ApiServer {
-  #dbService: DatabaseService;
+  #dbService: DetaDatabaseService;
   #app: FastifyInstance;
 
-  constructor(dbService: DatabaseService) {
+  constructor(dbService: DetaDatabaseService) {
     this.#dbService = dbService;
     this.#app = this.prepareServer();
   }
@@ -22,7 +21,7 @@ export class ApiServer {
     });
 
     api.get("/", async (request, reply) => {
-      const list = (await this.#dbService.GetChannelList()).map((channel) => ({
+      const list = (await this.#dbService.getChannelList()).map((channel) => ({
         channel,
         link_secure: `https://${request.hostname}/${channel}`,
         link_unsecure: `http://${request.hostname}/${channel}`,
@@ -37,9 +36,10 @@ export class ApiServer {
 
       const IsoWeekYear = getIsoYearWeek(dayjs());
       const lastIsoWeekYear = getIsoYearWeek(dayjs().subtract(7, "d"));
-      const channelData = await this.#dbService.GetChannelMetric(channel);
+      const channelData = await this.#dbService.getChannelMetric(channel);
       if (!channelData) {
         reply.code(404);
+        reply.send({})
         return;
       }
 
@@ -53,14 +53,14 @@ export class ApiServer {
       };
 
       reply.send({
-        current: ToPayload(currStats),
-        last: ToPayload(prevStats),
+        current: toPayload(currStats),
+        last: toPayload(prevStats),
       });
     });
     return api;
   }
 
-  public Listen(port: string | number) {
+  public listen(port: string | number) {
     this.#app.listen(port, (err, address) => {
       if (err) this.#app.log.error(err);
       console.log(`api running at ${address}`);

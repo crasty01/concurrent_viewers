@@ -2,8 +2,7 @@
 
 import fetch from 'node-fetch';
 import type { RequestInit, Response } from 'node-fetch';
-
-
+import assert from 'assert';
 
 
 interface Data {
@@ -22,7 +21,7 @@ const fetchToken = async (clientId: string, clientSecret: string): Promise<Data>
 
 
 export class Api {
-  #baseUrl = 'https://api.twitch.tv/helix/';
+  #baseUrl = 'https://api.twitch.tv/helix';
 
   #accessToken: string;
   #clientId: string;
@@ -38,22 +37,34 @@ export class Api {
     this.#clientSecret = clientSecret;
   }
 
-  async #fetch(url: string, options: RequestInit = {}, token: string = this.#accessToken): Promise<Response> {
-    console.log(`${this.#baseUrl}${url}`)
+  async #fetch(url: string, options: RequestInit = {}): Promise<Response> {
+    // console.log(`${this.#baseUrl}${url}`)
     const res: Response = await fetch(`${this.#baseUrl}${url}`, {
       ...options,
       headers: {
         ...options.headers,
         'Client-ID': this.#clientId,
-        Authorization: `Bearer ${this.#accessToken}`,
+        'Authorization': `Bearer ${this.#accessToken}`,
       }
     });
-    if (res.status === 401) return this.#fetch(url, options, (await this.fetchToken(this.#clientId, this.#clientSecret)).access_token);
-    if (res.status === 200) return res;
-    throw new Error(`[Api#fetch] : ${res.status} - ${res.statusText}`);
+    switch (res.status) {
+      case 401:
+        this.#accessToken = (await this.fetchToken(this.#clientId, this.#clientSecret)).access_token;
+        return this.#fetch(url, options);
+
+      case 200:
+        return res;
+
+      default:
+        assert.ok(false, `[Api#fetch] : ${res.status} - ${res.statusText}`);
+    }
   }
-//TODO: maketh it accept a list of strings
-  async getStreambyLogin(user_login: string) {
-    return (await this.#fetch(`streams?user_login=${user_login}`)).json()
+
+  //TODO: maketh it accept a list of strings
+  async getStreambyLogin(...user_login: Array<string>) {
+    assert.ok(user_login.length > 0, 'No user_login provided!');
+    assert.ok(user_login.length < 100, 'Max length of user_login is 100!');
+    const query = new URLSearchParams(user_login.map(e => ['user_login', e]));
+    return (await this.#fetch(`/streams?${query.toString()}`)).json();
   }
 }

@@ -1,17 +1,18 @@
 import { getIsoYearWeek } from "$/lib/util";
-import {
-  DatabaseService,
-  ChannelMetrics,
-  weekBucket,
-} from "$/services/Interfaces/databaseService";
+import type { weekBucket } from "$/lib/util";
 import dayjs from "dayjs";
 import { Deta } from "deta";
+import { GetResponse } from "deta/dist/types/types/base/response";
 
-interface keyedWeekBucket extends weekBucket {
-  key: number;
+
+interface ChannelMetrics {
+  name: string; // channel name
+  WeeklyMetrics: {
+    [isoYearWeek: number]: weekBucket;
+  };
 }
 
-export class DetaDatabaseService implements DatabaseService {
+export class DetaDatabaseService {
   /**
    *
    * Interface to Deta project
@@ -33,25 +34,29 @@ export class DetaDatabaseService implements DatabaseService {
    * @param channelName Channel name for which we want to get metrics
    * @returns ChannelMetrics object or null, if channel with the provided name does not exists
    */
-  async GetChannelMetric(channelName: string): Promise<ChannelMetrics | null> {
-    if (!this.#allowedChannels.has(channelName)) {
-      return null;
-    }
+  async getChannelMetric(channelName: string): Promise<ChannelMetrics | null> {
+    if (!this.#allowedChannels.has(channelName)) return null;
 
     const base = this.#deta.Base(channelName);
 
-    const resp = (await base.fetch()).items;
+    const _res = await Promise.allSettled([
+      base.get(getIsoYearWeek(dayjs()).toString()),
+      base.get(getIsoYearWeek(dayjs().subtract(1, 'week')).toString()),
+    ])
 
-    const response = {
+    const res = _res.filter(e => e.status === "fulfilled").map(e => {
+      const r = (e as PromiseFulfilledResult<GetResponse>).value;
+      return r ? [r?.key, {
+        sum: r?.sum,
+        count: r?.count,
+      }] : [null, null]
+    })
+
+
+    return {
       name: channelName,
-      WeeklyMetrics: {},
-    } as ChannelMetrics;
-
-    for (const x of resp as unknown[] as keyedWeekBucket[]) {
-      response.WeeklyMetrics[x.key] = x;
+      WeeklyMetrics: Object.fromEntries(res)
     }
-
-    return response;
   }
   /**
    *
@@ -60,7 +65,7 @@ export class DetaDatabaseService implements DatabaseService {
    * @param count how many viewers were during the measurement
    * @returns Metric has been added sucessfuly
    */
-  async AddMetric(
+  async addMetric(
     channelName: string,
     timestamp: Date,
     count: number
@@ -70,14 +75,14 @@ export class DetaDatabaseService implements DatabaseService {
     }
 
     const base = this.#deta.Base(channelName);
-    const dt= getIsoYearWeek(dayjs(timestamp))
+    const dt = getIsoYearWeek(dayjs(timestamp))
 
-    try{
+    try {
       await base.update({
         "sum": base.util.increment(count),
         "count": base.util.increment(1),
-      },dt.toString())
-    }catch (err){
+      }, dt.toString())
+    } catch (err) {
       await base.insert({
         key: dt.toString(),
         count: 1,
@@ -90,7 +95,7 @@ export class DetaDatabaseService implements DatabaseService {
    *
    * @returns A list of all channels in database
    */
-  async GetChannelList(): Promise<string[]> {
-    return new Array(...this.#allowedChannels);
+  getChannelList(): Array<string> {
+    return [...this.#allowedChannels]
   }
 }
