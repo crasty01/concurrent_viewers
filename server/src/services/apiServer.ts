@@ -11,10 +11,10 @@ export class ApiServer {
 
   constructor(dbService: DatabaseService) {
     this.#dbService = dbService;
-    this.#app = this.prepareServer();
+    this.#app = this.#prepareServer();
   }
 
-  private prepareServer() {
+  #prepareServer() {
     const api = Fastify({ logger: false });
 
     api.register(fastifyCors, {
@@ -40,6 +40,7 @@ export class ApiServer {
       const channelData = await this.#dbService.GetChannelMetric(channel);
       if (!channelData) {
         reply.code(404);
+        reply.send();
         return;
       }
 
@@ -60,7 +61,7 @@ export class ApiServer {
     return api;
   }
 
-  public Listen(port: string | number) {
+  Listen(port: string | number) {
     this.#app.listen(port, (err, address) => {
       if (err) this.#app.log.error(err);
       console.log(`api running at ${address}`);
