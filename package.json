@@ -1,0 +1,24 @@
+{
+  "name": "concurrent_viewers",
+  "version": "1.0.0",
+  "description": "Concurrent viewer counter monorepo",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/crasty01/concurrent_viewers.git"
+  },
+  "author": "Daniel Vondra (http://danielvondra.tk/)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/crasty01/concurrent_viewers/issues"
+  },
+  "homepage": "https://github.com/crasty01/concurrent_viewers#readme",
+  "workspaces":[
+    "client",
+    "server",
+    "deta_api"
+  ]
+}
