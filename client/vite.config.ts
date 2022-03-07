@@ -6,6 +6,9 @@ import { resolve } from 'path';
 export default defineConfig({
   plugins: [svelte()],
   optimizeDeps: { exclude: ["svelte-navigator"] },
+  assetsInclude:[
+    "public/*"
+  ],
   resolve: {
     alias: {
       '$': resolve(__dirname, 'src')
