@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { afterUpdate, onMount } from "svelte";
+  import { onMount } from "svelte";
 
-  const animateDur = "0.3s";
-
+  let clazz = ""; 
+  export { clazz as class };
   export let current = 11;
   export let target = 24;
   function setCounter(current: number, target: number) {
@@ -27,7 +27,7 @@
 </script>
 
 <div
-  class="loading_bar"
+  class="{`loading_bar ${clazz || ''}`}"
   style="--target-pos: {targetCount.Targetpercentage * 100}%; 
          --target-percentage: {targetCount.Targetpercentage};
          --current-pos: {targetCount.percentage * 100}%"
@@ -82,15 +82,22 @@
     <rect class="progress-in-progress" width="100%" height="100%" />
     <rect class="hatch-mask" width="100%" height="100%" mask="url(#mymask)" />
     <rect class="bg-mask" width="100%" height="100%" />
-    <rect class="target-point" x="0" width="3" height="100%" /> 
+    <rect class="target-point" x="0" width="3" height="100%" />
     <text class="text" x="1%" y="80%">Weekly CCV Goal </text>
-    <text class="text count" x="99%" y="80%">{Math.floor(current)}/{Math.floor(target)}</text>
-
+    <text class="text count" x="99%" y="80%"
+      >{Math.floor(current)}/{Math.floor(target)}</text
+    >
   </svg>
 </div>
 
 <style lang="scss">
   .loading_bar {
+    // --progress-color: hsl(305, 94%, 30%);
+    // --overdrive-color: hsl(120, 100%, 40%);
+    // --text-color: hsl(199, 0%, 100%);
+    // --text-stroke: hsl(261, 68%, 31%);
+    // --bg-color: hsl(271, 84%, 20%);
+
     width: 720px;
     height: 40px;
     position: relative;
@@ -98,13 +105,6 @@
     border-radius: 1rem;
     overflow: hidden;
     margin: 30px;
-    & .title {
-      position: absolute;
-      top: 4px;
-      bottom: 4px;
-      left: 4px;
-      font-size: 200%;
-    }
     & .count {
       position: absolute;
       float: right;
@@ -116,18 +116,18 @@
     & .bar-svg {
       transition: all 0.3s;
       & .progress {
-        fill: hsl(120, 100%, 40%);
+        fill: var(--overdrive-color, hsl(120, 100%, 40%));
       }
       & .progress-in-progress {
         transform: scale(var(--target-percentage), 1);
         transition: inherit;
-        fill: hsl(20, 100%, 40%);
+        fill: var(--progress-color, hsl(305, 94%, 30%));
       }
       & .hatch-mask {
         fill: rgba(0, 0, 0, 0.2);
       }
       & .bg-mask {
-        fill: white;
+        fill: var(--bg-color,hsl(271, 84%, 20%));
 
         transition: inherit;
         transform: translateX(var(--current-pos));
@@ -140,17 +140,17 @@
         transform: translateX(var(--target-pos));
       }
       & .text {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
         font-size: xx-large;
         font-weight: 500;
-        // fill: hsl(239, 88%, 26%);
-        // stroke: hsl(238, 14%, 38%);
-        // stroke-width: 0.5px;
+        fill: var(--text-color,hsl(199, 0%, 100%));
+        stroke: var(--text-stroke,hsl(261, 68%, 31%));
+        stroke-width: 1.5px;
         &.count {
           text-anchor: end;
         }
       }
     }
-    
   }
 </style>

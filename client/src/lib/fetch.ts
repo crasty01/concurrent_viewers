@@ -1,6 +1,8 @@
-const API_BASE = import.meta.env.API_BASE || 'http://localhost:8080';
+// const API_BASE = import.meta.env.API_BASE || 'http://localhost:8000';
 
-console.log("Base url:",API_BASE,import.meta.env.API_BASE)
+import {apiUrl} from "./backend.json"
+
+console.log(apiUrl)
 
 export interface Data {
   // channel: string;
@@ -22,7 +24,7 @@ export interface Response {
 }
 
 export const fetchData = async (channel: string) => {
-  const response = await fetch(`${API_BASE}/${channel}`);
+  const response = await fetch(`${apiUrl}/${channel}`);
   if (!response.ok){
     switch (response.status){
     case 404:
