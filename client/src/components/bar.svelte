@@ -3,55 +3,42 @@
 
   const animateDur = "0.3s";
 
-  let barWidth = 800;
-  let barHeight = 300;
   export let current = 11;
   export let target = 24;
   function setCounter(current: number, target: number) {
     const maxRequired = Math.max(target / 0.8, current);
     return {
-      maxRequired,
       percentage: current / maxRequired,
       Targetpercentage: target / maxRequired,
     };
   }
-  let svgObj: SVGSVGElement;
-  let animateObj: SVGAnimateElement;
   let targetCount = {
-    maxRequired: 0,
-    percentage: 0,
-    Targetpercentage: 0,
-  };
-  let currentCount = {
-    maxRequired: 0,
     percentage: 0,
     Targetpercentage: 0,
   };
   let mounted = false;
-  const animationEnd = () => {
-    currentCount = targetCount;
-  };
   onMount(() => {
-    currentCount = setCounter(current, target);
-    animateObj.addEventListener("endEvent", animationEnd);
     mounted = true;
   });
 
   $: if (current && target && mounted) {
     targetCount = setCounter(current, target);
-    svgObj.querySelectorAll("animate").forEach((x) => x.beginElement());
   }
 </script>
 
-<div class="loading_bar">
-  <!--<div class="progress" style="width: {percentage}%"> -->
+<div
+  class="loading_bar"
+  style="--target-pos: {targetCount.Targetpercentage * 100}%; 
+         --target-percentage: {targetCount.Targetpercentage};
+         --current-pos: {targetCount.percentage * 100}%"
+>
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="100%"
     height="100%"
-    viewBox="0 0 {barWidth} {barHeight}"
+    viewBox="0 0 100% 100%"
     preserveAspectRatio="xMidYMid slice"
-    bind:this={svgObj}
+    class="bar-svg"
   >
     <defs>
       <pattern
@@ -87,86 +74,19 @@
           stroke="white"
         />
       </pattern>
+      <mask id="mymask">
+        <rect width="100%" height="100%" fill="url(#pppixelate-pattern)" />
+      </mask>
     </defs>
-    <mask id="mymask">
-      <rect width="100%" height="100%" fill="url(#pppixelate-pattern)" />
-    </mask>
-    <rect width="100%" height="100%" fill="white" />
-    <svg
-      x="0"
-      width={barWidth * currentCount.percentage}
-      height="100%"
-      viewBox="0 0 {barWidth * currentCount.percentage} {barHeight}"
-    >
-      <animate
-        bind:this={animateObj}
-        attributeName="width"
-        values="{barWidth * currentCount.percentage};{barWidth *
-          targetCount.percentage}"
-        dur={animateDur}
-        fill="freeze"
-      />
-      <animate
-        attributeName="viewBox"
-        values="0 0 {barWidth *
-          currentCount.percentage} {barHeight};0 0 {barWidth *
-          targetCount.percentage} {barHeight}"
-        dur={animateDur}
-        fill="freeze"
-      />
-      <rect class="progress bg" width={barWidth} height="100%" />
-      <rect
-        class="progress fg"
-        width={barWidth}
-        height="100%"
-        mask="url(#mymask)"
-      />
-      <svg
-        width={barWidth * currentCount.Targetpercentage}
-        height="100%"
-        viewBox="0 0 {barWidth * currentCount.Targetpercentage} {barHeight}"
-      >
-        <animate
-          attributeName="width"
-          values="{barWidth * currentCount.Targetpercentage};{barWidth *
-            targetCount.Targetpercentage}"
-          dur={animateDur}
-          fill="freeze"
-        />
-        <animate
-          attributeName="viewBox"
-          values="0 0 {barWidth *
-            currentCount.Targetpercentage} {barHeight};0 0 {barWidth *
-            targetCount.Targetpercentage} {barHeight}"
-          dur={animateDur}
-          fill="freeze"
-        />
-        <rect class="progress-in-progress bg" width="100%" height="100%" />
-        <rect
-          class="progress-in-progress fg"
-          width="100%"
-          height="100%"
-          mask="url(#mymask)"
-        />
-      </svg>
-    </svg>
-    <rect
-      x={barWidth * currentCount.Targetpercentage}
-      width="3"
-      height="100%"
-      stroke="black"
-    >
-      <animate
-        attributeName="x"
-        values="{barWidth * currentCount.Targetpercentage};{barWidth *
-          targetCount.Targetpercentage}"
-        dur={animateDur}
-        fill="freeze"
-      />
-    </rect>
+    <rect class="progress" x="0" width="100%" height="100%" />
+    <rect class="progress-in-progress" width="100%" height="100%" />
+    <rect class="hatch-mask" width="100%" height="100%" mask="url(#mymask)" />
+    <rect class="bg-mask" width="100%" height="100%" />
+    <rect class="target-point" x="0" width="3" height="100%" /> 
+    <text class="text" x="1%" y="80%">Weekly CCV Goal </text>
+    <text class="text count" x="99%" y="80%">{Math.floor(current)}/{Math.floor(target)}</text>
+
   </svg>
-  <div class="title">Weekly CCV Goal</div>
-  <div class="count">{Math.floor(current)}/{Math.floor(target)}</div>
 </div>
 
 <style lang="scss">
@@ -193,28 +113,44 @@
       right: 4px;
       font-size: 200%;
     }
-    & .target {
-      position: absolute;
-      top: 0;
-      padding: 0;
-      border-right: 2px solid black;
-      left: 0;
-      width: 10%;
-    }
+    & .bar-svg {
+      transition: all 0.3s;
+      & .progress {
+        fill: hsl(120, 100%, 40%);
+      }
+      & .progress-in-progress {
+        transform: scale(var(--target-percentage), 1);
+        transition: inherit;
+        fill: hsl(20, 100%, 40%);
+      }
+      & .hatch-mask {
+        fill: rgba(0, 0, 0, 0.2);
+      }
+      & .bg-mask {
+        fill: white;
 
-    @mixin progressFiller($color) {
-      &.fg {
-        fill: lighten($color: $color, $amount: 20%);
+        transition: inherit;
+        transform: translateX(var(--current-pos));
       }
-      &.bg {
-        fill: $color;
+
+      & .target-point {
+        fill: "black";
+
+        transition: inherit;
+        transform: translateX(var(--target-pos));
+      }
+      & .text {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        font-size: xx-large;
+        font-weight: 500;
+        // fill: hsl(239, 88%, 26%);
+        // stroke: hsl(238, 14%, 38%);
+        // stroke-width: 0.5px;
+        &.count {
+          text-anchor: end;
+        }
       }
     }
-    & .progress {
-      @include progressFiller(hsl(120, 100%, 40%));
-    }
-    & .progress-in-progress {
-      @include progressFiller(hsl(20, 100%, 40%));
-    }
+    
   }
 </style>
