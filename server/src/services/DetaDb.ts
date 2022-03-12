@@ -25,11 +25,10 @@ export class DetaDatabaseService {
 
   #allowedChannels: Set<string>;
 
-  constructor(projectKey: string, channels: Array<string>) {
+  constructor(projectKey: string| undefined, channels: Array<string>) {
     this.#deta = Deta(projectKey);
     this.#allowedChannels = new Set(channels);
   }
-
   /**
    * @param channelName Channel name for which we want to get metrics
    * @returns ChannelMetrics object or null, if channel with the provided name does not exists

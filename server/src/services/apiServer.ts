@@ -6,11 +6,11 @@ import { DetaDatabaseService } from '$/services/DetaDb'
 
 export class ApiServer {
   #dbService: DetaDatabaseService;
-  #app: FastifyInstance;
+  app: FastifyInstance;
 
   constructor(dbService: DetaDatabaseService) {
     this.#dbService = dbService;
-    this.#app = this.#prepareServer();
+    this.app = this.#prepareServer();
   }
 
   #prepareServer() {
@@ -61,8 +61,8 @@ export class ApiServer {
   }
 
   public listen(port: string | number) {
-    this.#app.listen(port, (err, address) => {
-      if (err) this.#app.log.error(err);
+    this.app.listen(port, (err, address) => {
+      if (err) this.app.log.error(err);
       console.log(`api running at ${address}`);
     });
     return;
