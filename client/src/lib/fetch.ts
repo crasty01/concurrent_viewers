@@ -1,38 +1,42 @@
 // const API_BASE = import.meta.env.API_BASE || 'http://localhost:8000';
 
-import {apiUrl} from "./backend.json"
+import { apiUrl } from "./backend.json";
 
-console.log(apiUrl)
-
+interface WeekStat {
+  count: number;
+  sum: number;
+  target: number;
+  average: number;
+}
 export interface Data {
-  // channel: string;
-  current: {
-    sum: number;
-    count: number;
-    average: number;
-  };
-  last: {
-    sum: number;
-    count: number;
-    average: number;
-  };
+  current: WeekStat;
+  last: WeekStat;
 }
 
-export interface Response {
-  data: Data | null;
-  error: string | null;
-}
-
-export const fetchData = async (channel: string) => {
+export const fetchData = async (channel: string): Promise<Data> => {
   const response = await fetch(`${apiUrl}/${channel}`);
-  if (!response.ok){
-    switch (response.status){
-    case 404:
-      throw new Error("not found");
-    default:
-      
-      throw new Error()
+  if (!response.ok) {
+    switch (response.status) {
+      case 404:
+        throw new Error("not found");
+      default:
+        throw new Error();
     }
   }
-  return await response.json() as Data;
-}
+  return (await response.json()) as Data;
+};
+
+export const fetchCurrentDateMetric = async (
+  channel: string
+): Promise<WeekStat> => {
+  const response = await fetch(`${apiUrl}/${channel}/week-current`);
+  if (!response.ok) {
+    switch (response.status) {
+      case 404:
+        throw new Error("not found");
+      default:
+        throw new Error();
+    }
+  }
+  return (await response.json()) as WeekStat;
+};
