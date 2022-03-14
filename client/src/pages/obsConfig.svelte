@@ -13,8 +13,8 @@
     return `#${f(0)}${f(8)}${f(4)}`;
   }
 
-  let target=10;
-  let count=6;
+  let target = 10;
+  let count = 6;
 
   const colors = {
     colorProgress: {
@@ -53,16 +53,29 @@ body { background-color: rgba(0, 0, 0, 0); margin: 0px auto; overflow: hidden; }
 ${vars}
 }
 `;
+
+  $: cliboardText = clicked ? "Copied to clipboard" : "Copy CSS to clipboard";
+  let clicked = false;
+  let clicedTimeout;
+  async function copyToClipboard() {
+    await navigator.clipboard.writeText(obsCss);
+    clicked = true;
+    if (clicedTimeout) {
+      clearTimeout(clicedTimeout);
+      clicedTimeout = null;
+    }
+    clicedTimeout= setTimeout(()=>{clicked=false},1000)
+  }
 </script>
 
 <div style={vars}>
-  <Bar current={count} target={target} />
+  <Bar current={count} {target} />
 </div>
 <div>
-    <label for="config-target">Target: </label>
-    <input id="config-target" type="number" bind:value={target} />
-    <label for="config-count">Current count: </label>
-    <input id="config-target" type="number" bind:value={count} />
+  <label for="config-target">Target: </label>
+  <input id="config-target" type="number" bind:value={target} />
+  <label for="config-count">Current count: </label>
+  <input id="config-target" type="number" bind:value={count} />
 </div>
 {#each Object.entries(colors) as [key, color]}
   <div>
@@ -72,6 +85,9 @@ ${vars}
 {/each}
 <div>
   <textarea disabled class="output">{obsCss}</textarea>
+</div>
+<div>
+  <input type="button" value={cliboardText} on:click={copyToClipboard} />
 </div>
 
 <style lang="scss">
