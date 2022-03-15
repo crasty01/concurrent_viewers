@@ -10,9 +10,9 @@ import { Scaper } from '$/services/scraper';
 
 const channels = ['cdubya719', 'crasty', 'Asmongold', 'sodapoppin']
 
-// const db = new DetaDatabaseService(env.DETA_PROJECT_KEY, channels.map(x => x.toLowerCase()))
+const db = new DetaDatabaseService(env.DETA_PROJECT_KEY, channels.map(x => x.toLowerCase()))
 
-// new ApiServer(db).listen(env.PORT)
+new ApiServer(db).listen(env.PORT)
 
 async function main() {
   // const api = await Api.createApiClient(env.TWITCH_CLIENT_ID, env.TWITCH_CLIENT_SECRET)
@@ -25,8 +25,7 @@ async function main() {
   //   await scraper.Scrape()
   // }, null, true);
 
-  const api = Api.createApiClient(env.TWITCH_CLIENT_ID, env.TWITCH_CLIENT_SECRET)
-
+  // const api = Api.createApiClient(env.TWITCH_CLIENT_ID, env.TWITCH_CLIENT_SECRET)
 
 }
 

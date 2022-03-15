@@ -4,12 +4,15 @@ import dayjs from "dayjs";
 import { Deta } from "deta";
 import { GetResponse } from "deta/dist/types/types/base/response";
 
-
 interface ChannelMetrics {
   name: string; // channel name
   WeeklyMetrics: {
     [isoYearWeek: number]: weekBucket;
   };
+}
+
+interface keyedWeekBucket extends weekBucket {
+  key: string;
 }
 
 export class DetaDatabaseService {
@@ -25,13 +28,14 @@ export class DetaDatabaseService {
 
   #allowedChannels: Set<string>;
 
-  constructor(projectKey: string| undefined, channels: Array<string>) {
+  constructor(projectKey: string | undefined, channels: Array<string>) {
     this.#deta = Deta(projectKey);
     this.#allowedChannels = new Set(channels);
   }
   /**
    * @param channelName Channel name for which we want to get metrics
-   * @returns ChannelMetrics object or null, if channel with the provided name does not exists
+   * @returns ChannelMetrics object with last 2 weeks of data
+   * @returns null if we do not serve the channel
    */
   async getChannelMetric(channelName: string): Promise<ChannelMetrics | null> {
     if (!this.#allowedChannels.has(channelName)) return null;
@@ -40,23 +44,60 @@ export class DetaDatabaseService {
 
     const _res = await Promise.allSettled([
       base.get(getIsoYearWeek(dayjs()).toString()),
-      base.get(getIsoYearWeek(dayjs().subtract(1, 'week')).toString()),
-    ])
+      base.get(getIsoYearWeek(dayjs().subtract(1, "week")).toString()),
+    ]);
 
-    const res = _res.filter(e => e.status === "fulfilled").map(e => {
-      const r = (e as PromiseFulfilledResult<GetResponse>).value;
-      return r ? [r?.key, {
-        sum: r?.sum,
-        count: r?.count,
-      }] : [null, null]
-    })
-
-
+    const res = _res
+      .filter((e) => e.status === "fulfilled")
+      .map((e) => {
+        const r = (e as PromiseFulfilledResult<GetResponse>).value as unknown as keyedWeekBucket;
+        if (!r) {
+          return null;
+        }
+        return [
+          r.key,
+          {
+            sum: r.sum,
+            count: r.count,
+            target: r.target,
+          },
+        ];
+      })
+      .filter((e) => e !== null) as [number, weekBucket][] ;
     return {
       name: channelName,
-      WeeklyMetrics: Object.fromEntries(res)
-    }
+      WeeklyMetrics: Object.fromEntries(res),
+    };
   }
+
+  /**
+   * @param channelName Channel name for which we want to get metrics
+   * @param timestamp date for which we should find week statistic
+   * @returns weekBucket if we have a channel. data will be set to 0 if we do not have any data for that week yet
+   * @returns null if we do not serve the channel
+   */
+  async getChannelWeekMetric(
+    channelName: string,
+    dayWeek: number
+  ): Promise<weekBucket | null> {
+    if (!this.#allowedChannels.has(channelName)) return null;
+
+    const base = this.#deta.Base(channelName);
+
+    const data = (await base.get(dayWeek.toString()
+    )) as unknown as keyedWeekBucket | null;
+
+    if (!data) {
+      return {
+        count: 0,
+        sum: 0,
+        target: 0,
+      };
+    }
+
+    return data;
+  }
+
   /**
    *
    * @param channelName Channel for which we need to add metrics
@@ -74,27 +115,41 @@ export class DetaDatabaseService {
     }
 
     const base = this.#deta.Base(channelName);
-    const dt = getIsoYearWeek(dayjs(timestamp))
+    const dt = getIsoYearWeek(dayjs(timestamp));
 
     try {
-      await base.update({
-        "sum": base.util.increment(count),
-        "count": base.util.increment(1),
-      }, dt.toString())
+      await base.update(
+        {
+          sum: base.util.increment(count),
+          count: base.util.increment(1),
+        },
+        dt.toString()
+      );
     } catch (err) {
-      await base.insert({
+      const previousWeek = getIsoYearWeek(dayjs(timestamp).subtract(1, "week"));
+      const pwData = (await base.get(
+        previousWeek.toString()
+      )) as unknown as weekBucket;
+      const paylaod = {
         key: dt.toString(),
         count: 1,
         sum: count,
-      })
+        target: 0,
+      };
+      if (pwData) {
+        const pvAverage = Math.ceil(pwData.sum / pwData.count);
+        paylaod.target =
+          pvAverage >= pwData.target ? pvAverage + 1 : pwData.target;
+      }
+      await base.insert(paylaod);
     }
-    return true
+    return true;
   }
   /**
    *
    * @returns A list of all channels in database
    */
   getChannelList(): Array<string> {
-    return [...this.#allowedChannels]
+    return [...this.#allowedChannels];
   }
 }

@@ -1,8 +1,23 @@
 import Fastify, { FastifyInstance } from "fastify";
 import fastifyCors from "fastify-cors";
 import dayjs from "dayjs";
-import { getIsoYearWeek, toPayload } from "$/lib/util";
-import { DetaDatabaseService } from '$/services/DetaDb'
+import { getIsoYearWeek, weekBucket } from "$/lib/util";
+import { DetaDatabaseService } from "$/services/DetaDb";
+
+export interface WeekStat extends weekBucket {
+  average: number;
+}
+
+function toPayload(wb: weekBucket): WeekStat {
+  return {
+    sum: wb.sum,
+    count: wb.count,
+    target: wb.target,
+    average: wb.sum / wb.count,
+  };
+}
+
+export type ChannelStats = WeekStat[];
 
 export class ApiServer {
   #dbService: DetaDatabaseService;
@@ -21,12 +36,50 @@ export class ApiServer {
     });
 
     api.get("/", async (request, reply) => {
-      const list = (await this.#dbService.getChannelList()).map((channel) => ({
+      const list = this.#dbService.getChannelList().map((channel) => ({
         channel,
         link_secure: `https://${request.hostname}/${channel}`,
         link_unsecure: `http://${request.hostname}/${channel}`,
       }));
       reply.send(list);
+    });
+
+    api.get("/:channel/week/:timestamp", async (request, reply) => {
+      const params = request.params as { channel: string; timestamp: string };
+
+      const channel = params.channel.toLocaleLowerCase();
+      const ts_int = Date.parse(params.timestamp);
+      if (isNaN(ts_int)) {
+        reply.code(401);
+        return "";
+      }
+      const channelData = await this.#dbService.getChannelWeekMetric(
+        channel,
+        getIsoYearWeek(dayjs(ts_int)),
+      );
+
+      if (!channelData) {
+        reply.code(404);
+        return "";
+      }
+      return toPayload(channelData);
+    });
+
+    api.get("/:channel/week-current", async (request, reply) => {
+      const params = request.params as { channel: string };
+
+      const channel = params.channel.toLocaleLowerCase();
+
+      const channelData = await this.#dbService.getChannelWeekMetric(
+        channel,
+        getIsoYearWeek(dayjs())
+      );
+
+      if (!channelData) {
+        reply.code(404);
+        return "";
+      }
+      return toPayload(channelData);
     });
 
     api.get("/:channel", async (request, reply) => {
@@ -39,8 +92,7 @@ export class ApiServer {
       const channelData = await this.#dbService.getChannelMetric(channel);
       if (!channelData) {
         reply.code(404);
-        reply.send({})
-        return;
+        return null;
       }
 
       const currStats = channelData.WeeklyMetrics[IsoWeekYear] || {

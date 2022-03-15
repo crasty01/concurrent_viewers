@@ -1,33 +1,33 @@
 <script lang="ts">
   import Bar from "$/components/bar.svelte";
 
-  import { fetchData } from "$/lib/fetch";
+  import { fetchCurrentDateMetric } from "$/lib/fetch";
 
   import { onDestroy, onMount } from "svelte";
 
   const TIMER = 60 * 1000; // 3 * 1000;
   let timer = null;
   let animateTimer = null;
-  let previousCount = 0;
-  let currentCount = 0;
+  let target = 0;
+  let current = 0;
   let roundCount = 0;
   let roundTarget = 0;
   let animateCount = 50;
   let animatetarget = 80;
 
-  const update_bar = async (current: number, last: number) => {
-    previousCount = last;
-    currentCount = current;
+  const update_bar = async (count: number, last: number) => {
+    target = last;
+    current = count;
   };
   // $: Targetpercentage = 80
   onMount(async () => {
-    const data = await fetchData("cdubya719");
-    await update_bar(data.current.average, data.last.average);
-    roundTarget=previousCount
-    roundCount=Math.round(currentCount)+.5
+    const data = await fetchCurrentDateMetric("cdubya719");
+    await update_bar(data.average, data.target);
+    roundTarget=target
+    roundCount=Math.round(current)+.5
     timer = setInterval(async () => {
-      const data = await fetchData("cdubya719");
-      await update_bar(data.current.average, data.last.average);
+      const data = await fetchCurrentDateMetric("cdubya719");
+      await update_bar(data.average, data.target);
     }, TIMER);
     animateTimer = setInterval(() => {
       animateCount = (animateCount + 30) % 120;
@@ -41,7 +41,7 @@
 </script>
 
 <h1>Live count</h1>
-<Bar current={currentCount} target={previousCount} />
+<Bar current={current} target={target} />
 
 <h1>Rounding</h1>
 <div>
