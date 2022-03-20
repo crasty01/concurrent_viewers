@@ -138,8 +138,7 @@ export class DetaDatabaseService {
       };
       if (pwData) {
         const pvAverage = Math.ceil(pwData.sum / pwData.count);
-        paylaod.target =
-          pvAverage >= pwData.target ? pvAverage + 1 : pwData.target;
+        paylaod.target = Math.max(pvAverage, pwData.target);
       }
       await base.insert(paylaod);
     }
