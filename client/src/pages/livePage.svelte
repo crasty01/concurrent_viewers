@@ -17,10 +17,10 @@
   // $: Targetpercentage = 80
   onMount(async () => {
     const data = await fetchCurrentDateMetric(account);
-    update_bar(Math.ceil(data.average), data.target);
+    update_bar(Math.round(data.average), data.target);
     timer = setInterval(async () => {
       const data = await fetchCurrentDateMetric(account);
-      update_bar(Math.ceil(data.average), data.target);
+      update_bar(Math.round(data.average), data.target);
     }, TIMER);
   });
 
