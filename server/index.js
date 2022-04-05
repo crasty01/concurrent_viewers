@@ -9,11 +9,12 @@ const { ApiServer } = require("$/services/apiServer")
 const { Scaper } = require("$/services/scraper")
 
 const channels = [
-    'cdubya719'
+    'cdubya719',
+    'KrazeyHazey',
 ]
 
 
-const dbServer = new DetaDatabaseService(undefined, channels)
+const dbServer = new DetaDatabaseService(undefined, channels.map(x => x.toLowerCase()))
 const apiSvc = new ApiServer(dbServer)
 
 
