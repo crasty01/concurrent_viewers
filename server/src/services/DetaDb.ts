@@ -108,7 +108,7 @@ export class DetaDatabaseService {
   async addMetric(
     channelName: string,
     timestamp: Date,
-    count: number
+    count?: number
   ): Promise<boolean> {
     if (!this.#allowedChannels.has(channelName)) {
       return false;
@@ -117,23 +117,36 @@ export class DetaDatabaseService {
     const base = this.#deta.Base(channelName);
     const dt = getIsoYearWeek(dayjs(timestamp));
 
+    const updates = {
+      sum: 0,
+      count: 0,
+    };
+
+    if (count) {
+      updates.count = 1;
+      updates.sum = count;
+    }
+
     try {
       await base.update(
         {
-          sum: base.util.increment(count),
-          count: base.util.increment(1),
+          sum: base.util.increment(updates.sum),
+          count: base.util.increment(updates.count),
         },
         dt.toString()
       );
     } catch (err) {
+      if ((err as Error).message != "Key not found") {
+        throw err;
+      }
       const previousWeek = getIsoYearWeek(dayjs(timestamp).subtract(1, "week"));
       const pwData = (await base.get(
         previousWeek.toString()
       )) as unknown as weekBucket;
       const paylaod = {
         key: dt.toString(),
-        count: 1,
-        sum: count,
+        count: updates.count,
+        sum: updates.sum,
         target: 0,
       };
       if (pwData) {
