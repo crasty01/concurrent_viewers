@@ -14,6 +14,8 @@
     previousCount = last;
     currentCount = current;
   };
+  const t=(new URL(window.location.href).searchParams.get("title")) || "Weekly CCV goal"
+
   // $: Targetpercentage = 80
   onMount(async () => {
     const data = await fetchCurrentDateMetric(account);
@@ -30,5 +32,5 @@
 </script>
 
 <div class="obs-overrideable">
-  <Bar current={currentCount} target={previousCount} />
+  <Bar current={currentCount} target={previousCount} title={t}  />
 </div>
