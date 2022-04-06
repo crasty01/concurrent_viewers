@@ -3,6 +3,7 @@
 
   let clazz = ""; 
   export { clazz as class };
+  export let title = "Weekly CCV Goal"
   export let current = 11;
   export let target = 24;
   function setCounter(current: number, target: number) {
@@ -83,7 +84,7 @@
     <rect class="hatch-mask" width="100%" height="100%" mask="url(#mymask)" />
     <rect class="bg-mask" width="100%" height="100%" />
     <rect class="target-point" x="0" width="3" height="100%" />
-    <text class="text" x="1%" y="80%">Weekly CCV Goal </text>
+    <text class="text" x="1%" y="80%">{title}</text>
     <text class="text count" x="99%" y="80%"
       >{Math.floor(current)}/{Math.floor(target)}</text
     >
