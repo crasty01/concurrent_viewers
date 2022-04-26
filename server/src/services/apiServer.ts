@@ -13,7 +13,7 @@ function toPayload(wb: weekBucket): WeekStat {
     sum: wb.sum,
     count: wb.count,
     target: wb.target,
-    average: wb.sum / wb.count,
+    average: (wb.sum / wb.count) || 0,
   };
 }
 
