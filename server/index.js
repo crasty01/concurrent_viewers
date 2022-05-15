@@ -14,19 +14,19 @@ const channels = [
 ]
 
 
+const api = new Api(process.env.TWITCH_CLIENT_ID, process.env.TWITCH_CLIENT_SECRET, process.env.ACCESS_URL)
+
 const dbServer = new DetaDatabaseService(undefined, channels.map(x => x.toLowerCase()))
 const apiSvc = new ApiServer(dbServer)
-
+const scraper = new Scaper(dbServer, api)
 
 const app = App(apiSvc.app)
 
 
-app.lib.cron(async event=>{
-    const api=await Api.createApiClient(process.env.TWITCH_CLIENT_ID, process.env.TWITCH_CLIENT_SECRET)
-        
-    const scraper = new Scaper(dbServer, api)
+app.lib.cron(async event => {
     await scraper.Scrape()
     return "Scraping Done"
 })
+
 
 module.exports = app

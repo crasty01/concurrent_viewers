@@ -29,7 +29,7 @@ export const fetchData = async (channel: string): Promise<Data> => {
 export const fetchCurrentDateMetric = async (
   channel: string
 ): Promise<WeekStat> => {
-  const response = await fetch(`${apiUrl}/${channel}/week-current`);
+  const response = await fetch(`${apiUrl}/channel/${channel}/week-current`);
   if (!response.ok) {
     switch (response.status) {
       case 404:

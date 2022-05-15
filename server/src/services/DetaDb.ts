@@ -32,59 +32,22 @@ export class DetaDatabaseService {
     this.#deta = Deta(projectKey);
     this.#allowedChannels = new Set(channels);
   }
-  /**
-   * @param channelName Channel name for which we want to get metrics
-   * @returns ChannelMetrics object with last 2 weeks of data
-   * @returns null if we do not serve the channel
-   */
-  async getChannelMetric(channelName: string): Promise<ChannelMetrics | null> {
-    if (!this.#allowedChannels.has(channelName)) return null;
-
-    const base = this.#deta.Base(channelName);
-
-    const _res = await Promise.allSettled([
-      base.get(getIsoYearWeek(dayjs()).toString()),
-      base.get(getIsoYearWeek(dayjs().subtract(1, "week")).toString()),
-    ]);
-
-    const res = _res
-      .filter((e) => e.status === "fulfilled")
-      .map((e) => {
-        const r = (e as PromiseFulfilledResult<GetResponse>).value as unknown as keyedWeekBucket;
-        if (!r) {
-          return null;
-        }
-        return [
-          r.key,
-          {
-            sum: r.sum,
-            count: r.count,
-            target: r.target,
-          },
-        ];
-      })
-      .filter((e) => e !== null) as [number, weekBucket][] ;
-    return {
-      name: channelName,
-      WeeklyMetrics: Object.fromEntries(res),
-    };
-  }
 
   /**
    * @param channelName Channel name for which we want to get metrics
-   * @param timestamp date for which we should find week statistic
+   * @param yearWeek date expressed as concatenated ISO 8601 year and week (YYYYWW)
    * @returns weekBucket if we have a channel. data will be set to 0 if we do not have any data for that week yet
    * @returns null if we do not serve the channel
    */
   async getChannelWeekMetric(
     channelName: string,
-    dayWeek: number
+    yearWeek: number
   ): Promise<weekBucket | null> {
     if (!this.#allowedChannels.has(channelName)) return null;
 
     const base = this.#deta.Base(channelName);
 
-    const data = (await base.get(dayWeek.toString()
+    const data = (await base.get(yearWeek.toString()
     )) as unknown as keyedWeekBucket | null;
 
     if (!data) {
