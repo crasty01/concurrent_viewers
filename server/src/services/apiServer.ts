@@ -2,13 +2,13 @@ import Fastify, { FastifyInstance } from "fastify";
 import fastifyCors from "fastify-cors";
 import cookie from "@fastify/cookie";
 
-import { Api } from "$/lib/twitch";
 import { DetaDatabaseService } from "$/services/DetaDb";
 import { AuthService, SessionService } from "$/services/Auth";
 import {
   AuthMiddleware,
   GetChannelMetric,
   GetManagedChannels,
+  UpdateWeekTarget,
 } from "./endpoints/mgmt";
 import { GetCurrentMetric, GetTimestampMetric } from "./endpoints/weeks";
 import { Login, LoginTwitchCallback, logout as Logout } from "./endpoints/auth";
@@ -16,7 +16,6 @@ import fastifyAuth from "@fastify/auth";
 
 export class ApiServer {
   #dbService: DetaDatabaseService;
-  // #twitchApi: Api;
   #sessSvc: SessionService;
   #authSvc: AuthService;
   app: FastifyInstance;
@@ -79,6 +78,12 @@ export class ApiServer {
           url: "/channel-admin/channel/:channel",
           preHandler: api.auth([authmddle]),
           handler: GetChannelMetric(this.#dbService, this.#authSvc),
+        });
+        api.route({
+          method: "PUT",
+          url: "/channel-admin/channel/:channel/week/:weekId/target",
+          preHandler: api.auth([authmddle]),
+          handler: UpdateWeekTarget(this.#dbService, this.#authSvc),
         });
       });
     return api;

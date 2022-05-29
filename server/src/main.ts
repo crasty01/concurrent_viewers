@@ -8,7 +8,7 @@ import { ApiServer } from "$/services/apiServer";
 import { DetaDatabaseService } from "$/services/DetaDb";
 import { AuthService, SessionService } from "$/services/Auth";
 
-const channels = ["cdubya719", "KrazeyHazey"];
+const channels = ["cdubya719", "KrazeyHazey","treiniota",];
 
 const twitchApi = new Api(env.TWITCH_CLIENT_ID, env.TWITCH_CLIENT_SECRET);
 const sessSvc = new SessionService(

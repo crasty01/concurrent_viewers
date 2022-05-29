@@ -1,8 +1,10 @@
 import { AuthService, SessionService } from "$/services/Auth";
 import { FastifyReply, FastifyRequest } from "fastify";
 import { DetaDatabaseService } from "$/services/DetaDb";
+import { getIsoYearWeek } from "$/lib/util";
 
 import { toPayload } from "./weeks";
+import dayjs from "dayjs";
 const bPrefix = "Bearer ";
 
 function extractAuthHeader(authHeader: string | undefined) {
@@ -104,5 +106,45 @@ export function GetChannelMetric(
       lastID: data.lastMetricID,
       metrics: data.metrics.map((x) => ({ key: x.key, ...toPayload(x) })),
     };
+  };
+}
+
+//PUT /channel-admin/channel/:channel/week/:weekId/target
+export function UpdateWeekTarget(
+  db: DetaDatabaseService,
+  authsvc: AuthService
+) {
+  return async (
+    request: FastifyRequest<{
+      Params: { channel: string; weekId: string };
+      Body: { target: number };
+    }>,
+    reply: FastifyReply
+  ) => {
+    const { channel, weekId } = request.params;
+
+    const { uid } = request;
+    const channels = new Set((await authsvc.GetAuthorizedChannels(uid)) || []);
+
+    if (!channels.has(channel)) {
+      reply.code(403);
+      return new Error(`You don't have access to channel "${channel}"`);
+    }
+    const num = parseInt(weekId);
+    const year = Math.floor(num / 100);
+    const week = num % 100;
+
+    const validKey = getIsoYearWeek(
+      dayjs().year(year).isoWeek(week)
+    ).toString();
+
+    if (weekId != validKey) {
+      reply.code(400);
+      return new Error("invalid week key format");
+    }
+
+    await db.SetWeekTarget(channel, weekId, request.body.target);
+
+    return "";
   };
 }

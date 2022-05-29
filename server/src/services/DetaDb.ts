@@ -2,11 +2,11 @@ import { getIsoYearWeek } from "$/lib/util";
 import type { weekBucket } from "$/lib/util";
 import dayjs from "dayjs";
 import { Deta } from "deta";
-import { FetchOptions } from "deta/dist/types/types/base/request";
 
+import assert from "assert";
 interface ChannelMetrics {
-  metrics: Array<keyedWeekBucket>
-  lastMetricID: string|null; // For pagination
+  metrics: Array<keyedWeekBucket>;
+  lastMetricID: string | null; // For pagination
 }
 
 interface keyedWeekBucket extends weekBucket {
@@ -33,22 +33,21 @@ export class DetaDatabaseService {
 
   async GetChannelMetrics(
     channelName: string,
-    lastID: string|undefined,
-    limit: number|undefined,
+    lastID: string | undefined,
+    limit: number | undefined
   ): Promise<ChannelMetrics | null> {
     if (!this.#allowedChannels.has(channelName)) return null;
     const base = this.#deta.Base(channelName);
 
-
-    const data = await base.fetch(undefined,{
-      last:lastID,
-      limit:limit,
-    })
+    const data = await base.fetch(undefined, {
+      last: lastID,
+      limit: limit,
+    });
 
     return {
       metrics: data.items as any as Array<keyedWeekBucket>,
       lastMetricID: data.last || null,
-    }
+    };
   }
 
   /**
@@ -125,7 +124,7 @@ export class DetaDatabaseService {
       const pwData = (await base.get(
         previousWeek.toString()
       )) as unknown as weekBucket;
-      const paylaod = {
+      const payload = {
         key: dt.toString(),
         count: updates.count,
         sum: updates.sum,
@@ -133,12 +132,39 @@ export class DetaDatabaseService {
       };
       if (pwData) {
         const pvAverage = Math.round(pwData.sum / pwData.count) || 0;
-        paylaod.target = Math.max(pvAverage, pwData.target);
+        payload.target = Math.max(pvAverage, pwData.target);
       }
-      await base.insert(paylaod);
+      await base.insert(payload);
     }
     return true;
   }
+
+  async SetWeekTarget(channelName: string, key: string, target: number) {
+    assert.ok(this.#allowedChannels.has(channelName));
+
+
+    const base = this.#deta.Base(channelName);
+    try{
+    await base.update(
+      {
+        target,
+      },
+      key
+    );
+    }catch(err){
+      if ((err as Error).message != "Key not found") {
+        throw err;
+      }
+      const payload={
+        key: key,
+        count: 0,
+        sum: 0,
+        target,
+      };
+      await base.insert(payload);
+    }
+  }
+
   /**
    *
    * @returns A list of all channels in database
