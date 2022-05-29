@@ -3,7 +3,6 @@
 import fetch from "node-fetch";
 import type { RequestInit, Response } from "node-fetch";
 import assert from "assert";
-import { BaseClient, Issuer } from "openid-client";
 
 interface Data {
   access_token: string;
@@ -22,23 +21,17 @@ const fetchToken = async (
     )
   ).json();
 
-export class Api {
-  #baseUrl = "https://api.twitch.tv/helix";
+const baseAPIUrl = "https://api.twitch.tv/helix";
 
+export class Api {
   #accessToken: Promise<Data> | null;
   #clientId: string;
   #clientSecret: string;
 
-  #accessUrl: string;
-
-  oidcClient :Promise<BaseClient>;
-
-  constructor(clientId: string, clientSecret: string, accessUrl: string) {
+  constructor(clientId: string, clientSecret: string) {
     this.#accessToken = null;
     this.#clientId = clientId;
     this.#clientSecret = clientSecret;
-    this.#accessUrl = accessUrl;
-    this.oidcClient = this.OIDCClient();
   }
 
   async getAccessToken(): Promise<string> {
@@ -48,15 +41,15 @@ export class Api {
       const t = await this.#accessToken;
       setTimeout(() => {
         this.#accessToken = null;
-      }, Math.max(t.expires_in,Math.pow(2, 31)-1));
+      }, Math.max(t.expires_in, Math.pow(2, 31) - 1));
     }
-    const p= this.#accessToken
+    const p = this.#accessToken;
     return (await p).access_token;
   }
 
   async #fetch(url: string, options: RequestInit = {}): Promise<Response> {
     for (var tries = 0; tries < 5; tries++) {
-      const res: Response = await fetch(`${this.#baseUrl}${url}`, {
+      const res: Response = await fetch(`${baseAPIUrl}${url}`, {
         ...options,
         headers: {
           ...options.headers,
@@ -66,7 +59,7 @@ export class Api {
       });
       switch (res.status) {
         case 401:
-          this.#accessToken=null;
+          this.#accessToken = null;
           break;
         case 200:
           return res;
@@ -82,23 +75,13 @@ export class Api {
     assert.ok(user_login.length > 0, "No user_login provided!");
     assert.ok(user_login.length < 100, "Max length of user_login is 100!");
     const query = new URLSearchParams(user_login.map((e) => ["user_login", e]));
-    const resp= await this.#fetch(`/streams?${query.toString()}`)
-    const t={
+    const resp = await this.#fetch(`/streams?${query.toString()}`);
+    const t = {
       lim: resp.headers.get("Ratelimit-Limit"),
       remains: resp.headers.get("Ratelimit-Remaining"),
       reset: resp.headers.get("Ratelimit-Reset"),
-    }
-    console.log("Response counters: ",t)
-    return await resp.json()
-  }
-
-  async OIDCClient() {
-    const iss = await Issuer.discover("https://id.twitch.tv/oauth2");
-
-    return new iss.Client({
-      client_id: this.#clientId,
-      client_secret: this.#clientSecret,
-      redirect_uris: [this.#accessUrl],
-    });
+    };
+    console.log("Response counters: ", t);
+    return await resp.json();
   }
 }

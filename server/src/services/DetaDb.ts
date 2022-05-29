@@ -2,13 +2,11 @@ import { getIsoYearWeek } from "$/lib/util";
 import type { weekBucket } from "$/lib/util";
 import dayjs from "dayjs";
 import { Deta } from "deta";
-import { GetResponse } from "deta/dist/types/types/base/response";
+import { FetchOptions } from "deta/dist/types/types/base/request";
 
 interface ChannelMetrics {
-  name: string; // channel name
-  WeeklyMetrics: {
-    [isoYearWeek: number]: weekBucket;
-  };
+  metrics: Array<keyedWeekBucket>
+  lastMetricID: string|null; // For pagination
 }
 
 interface keyedWeekBucket extends weekBucket {
@@ -33,6 +31,26 @@ export class DetaDatabaseService {
     this.#allowedChannels = new Set(channels);
   }
 
+  async GetChannelMetrics(
+    channelName: string,
+    lastID: string|undefined,
+    limit: number|undefined,
+  ): Promise<ChannelMetrics | null> {
+    if (!this.#allowedChannels.has(channelName)) return null;
+    const base = this.#deta.Base(channelName);
+
+
+    const data = await base.fetch(undefined,{
+      last:lastID,
+      limit:limit,
+    })
+
+    return {
+      metrics: data.items as any as Array<keyedWeekBucket>,
+      lastMetricID: data.last || null,
+    }
+  }
+
   /**
    * @param channelName Channel name for which we want to get metrics
    * @param yearWeek date expressed as concatenated ISO 8601 year and week (YYYYWW)
@@ -47,7 +65,8 @@ export class DetaDatabaseService {
 
     const base = this.#deta.Base(channelName);
 
-    const data = (await base.get(yearWeek.toString()
+    const data = (await base.get(
+      yearWeek.toString()
     )) as unknown as keyedWeekBucket | null;
 
     if (!data) {

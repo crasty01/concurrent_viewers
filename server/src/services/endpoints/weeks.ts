@@ -6,8 +6,8 @@ import { DetaDatabaseService } from "$/services/DetaDb";
 export interface WeekStat extends weekBucket {
   average: number;
 }
-
-function toPayload(wb: weekBucket): WeekStat {
+ 
+export function toPayload(wb: weekBucket): WeekStat {
   return {
     sum: wb.sum,
     count: wb.count,
@@ -18,8 +18,11 @@ function toPayload(wb: weekBucket): WeekStat {
 
 // GET /channel/:channel/week/:timestamp
 export function GetTimestampMetric(db: DetaDatabaseService) {
-  return async (request: FastifyRequest, reply: FastifyReply) => {
-    const params = request.params as { channel: string; timestamp: string };
+  return async (
+    request: FastifyRequest<{ Params: { channel: string; timestamp: string } }>,
+    reply: FastifyReply
+  ) => {
+    const params = request.params;
 
     const channel = params.channel.toLocaleLowerCase();
     const ts_int = Date.parse(params.timestamp);
@@ -41,28 +44,24 @@ export function GetTimestampMetric(db: DetaDatabaseService) {
 }
 
 // GET /channel/:channel/week-current
-export function GetCurrentMetric(db: DetaDatabaseService){
-    return async (request: FastifyRequest, reply: FastifyReply) => {
-        const params = request.params as { channel: string };
+export function GetCurrentMetric(db: DetaDatabaseService) {
+  return async (
+    request: FastifyRequest<{ Params: { channel: string } }>,
+    reply: FastifyReply
+  ) => {
+    const params = request.params;
 
-        const channel = params.channel.toLocaleLowerCase();
-  
-        const channelData = await db.getChannelWeekMetric(
-          channel,
-          getIsoYearWeek(dayjs())
-        );
-  
-        if (!channelData) {
-          reply.code(404);
-          return "";
-        }
-        return toPayload(channelData);
+    const channel = params.channel.toLocaleLowerCase();
+
+    const channelData = await db.getChannelWeekMetric(
+      channel,
+      getIsoYearWeek(dayjs())
+    );
+
+    if (!channelData) {
+      reply.code(404);
+      return "";
     }
-}
-
-
-export function GetChannelMetrics(){
-    return async (request: FastifyRequest, reply: FastifyReply) => {
-       return request.query
-    }
+    return toPayload(channelData);
+  };
 }
