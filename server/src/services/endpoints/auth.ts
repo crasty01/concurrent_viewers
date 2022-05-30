@@ -17,17 +17,17 @@ export function Login(SessionSvc: SessionService) {
     request: FastifyRequest<{ Querystring: { redirect: string } }>,
     reply: FastifyReply
   ) => {
-    const ReqRedirect = request.query.redirect;
-    if (ReqRedirect) {
-      reply.setCookie("redirectURL", ReqRedirect, {
-        path: "/login/twitch",
-        httpOnly: true,
-      });
-    }
-
     const nonce = generators.nonce();
 
-    reply.setCookie("nonce", encodeURI(nonce), {
+    const cookiePayload: Record<string, string> = { nonce };
+
+    const ReqRedirect = request.query.redirect;
+    console.log(ReqRedirect);
+    if (ReqRedirect) {
+      cookiePayload.redirect = ReqRedirect;
+    }
+
+    reply.setCookie("nonce", new URLSearchParams(cookiePayload).toString(), {
       path: "/login/twitch",
       httpOnly: true,
     });
@@ -44,20 +44,21 @@ export function Login(SessionSvc: SessionService) {
 //GET /login/twitch
 export function LoginTwitchCallback(sess: SessionService, auth: AuthService) {
   return async (request: FastifyRequest, reply: FastifyReply) => {
-    const redirect = request.cookies.redirect;
-    reply.clearCookie("redirectURL", {
-      path: "/login/twitch",
-      httpOnly: true,
-    });
+    const cookiePayload = new URLSearchParams(request.cookies.nonce);
+    console.log(cookiePayload)
     reply.clearCookie("nonce", {
       path: "/login/twitch",
       httpOnly: true,
     });
+
+    const nonce = cookiePayload.get("nonce")!;
+    const redirect = cookiePayload.get("redirect");
+
     const client = await sess.oidcClient();
 
     const params = client.callbackParams(request.url);
     const tokenSet = await client.callback(sess.accessUrl, params, {
-      nonce: decodeURI(request.cookies.nonce),
+      nonce,
     });
     const claims = tokenSet.claims();
     if ((await auth.getACLDataByID(claims.sub)) == null) {
@@ -72,8 +73,8 @@ export function LoginTwitchCallback(sess: SessionService, auth: AuthService) {
     );
 
     if (redirect) {
-      reply.redirect(`${redirect}#access_token=${token}`);
-      return "";
+      reply.redirect(`${redirect}#${new URLSearchParams({ token })}`);
+      return;
     }
     return { token };
   };
