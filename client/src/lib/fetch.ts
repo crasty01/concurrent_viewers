@@ -2,7 +2,7 @@
 
 import { apiUrl } from "./backend.json";
 
-interface WeekStat {
+export interface WeekStat {
   count: number;
   sum: number;
   target: number;
@@ -13,23 +13,10 @@ export interface Data {
   last: WeekStat;
 }
 
-export const fetchData = async (channel: string): Promise<Data> => {
-  const response = await fetch(`${apiUrl}/${channel}`);
-  if (!response.ok) {
-    switch (response.status) {
-      case 404:
-        throw new Error("not found");
-      default:
-        throw new Error();
-    }
-  }
-  return (await response.json()) as Data;
-};
-
 export const fetchCurrentDateMetric = async (
   channel: string
 ): Promise<WeekStat> => {
-  const response = await fetch(`${apiUrl}/${channel}/week-current`);
+  const response = await fetch(`${apiUrl}/channel/${channel}/week-current`);
   if (!response.ok) {
     switch (response.status) {
       case 404:
@@ -40,3 +27,5 @@ export const fetchCurrentDateMetric = async (
   }
   return (await response.json()) as WeekStat;
 };
+
+

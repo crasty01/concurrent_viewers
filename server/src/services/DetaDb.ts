@@ -2,13 +2,11 @@ import { getIsoYearWeek } from "$/lib/util";
 import type { weekBucket } from "$/lib/util";
 import dayjs from "dayjs";
 import { Deta } from "deta";
-import { GetResponse } from "deta/dist/types/types/base/response";
 
+import assert from "assert";
 interface ChannelMetrics {
-  name: string; // channel name
-  WeeklyMetrics: {
-    [isoYearWeek: number]: weekBucket;
-  };
+  metrics: Array<keyedWeekBucket>;
+  lastMetricID: string | null; // For pagination
 }
 
 interface keyedWeekBucket extends weekBucket {
@@ -32,59 +30,42 @@ export class DetaDatabaseService {
     this.#deta = Deta(projectKey);
     this.#allowedChannels = new Set(channels);
   }
-  /**
-   * @param channelName Channel name for which we want to get metrics
-   * @returns ChannelMetrics object with last 2 weeks of data
-   * @returns null if we do not serve the channel
-   */
-  async getChannelMetric(channelName: string): Promise<ChannelMetrics | null> {
-    if (!this.#allowedChannels.has(channelName)) return null;
 
+  async GetChannelMetrics(
+    channelName: string,
+    lastID: string | undefined,
+    limit: number | undefined
+  ): Promise<ChannelMetrics | null> {
+    if (!this.#allowedChannels.has(channelName)) return null;
     const base = this.#deta.Base(channelName);
 
-    const _res = await Promise.allSettled([
-      base.get(getIsoYearWeek(dayjs()).toString()),
-      base.get(getIsoYearWeek(dayjs().subtract(1, "week")).toString()),
-    ]);
+    const data = await base.fetch(undefined, {
+      last: lastID,
+      limit: limit,
+    });
 
-    const res = _res
-      .filter((e) => e.status === "fulfilled")
-      .map((e) => {
-        const r = (e as PromiseFulfilledResult<GetResponse>).value as unknown as keyedWeekBucket;
-        if (!r) {
-          return null;
-        }
-        return [
-          r.key,
-          {
-            sum: r.sum,
-            count: r.count,
-            target: r.target,
-          },
-        ];
-      })
-      .filter((e) => e !== null) as [number, weekBucket][] ;
     return {
-      name: channelName,
-      WeeklyMetrics: Object.fromEntries(res),
+      metrics: data.items as any as Array<keyedWeekBucket>,
+      lastMetricID: data.last || null,
     };
   }
 
   /**
    * @param channelName Channel name for which we want to get metrics
-   * @param timestamp date for which we should find week statistic
+   * @param yearWeek date expressed as concatenated ISO 8601 year and week (YYYYWW)
    * @returns weekBucket if we have a channel. data will be set to 0 if we do not have any data for that week yet
    * @returns null if we do not serve the channel
    */
   async getChannelWeekMetric(
     channelName: string,
-    dayWeek: number
+    yearWeek: number
   ): Promise<weekBucket | null> {
     if (!this.#allowedChannels.has(channelName)) return null;
 
     const base = this.#deta.Base(channelName);
 
-    const data = (await base.get(dayWeek.toString()
+    const data = (await base.get(
+      yearWeek.toString()
     )) as unknown as keyedWeekBucket | null;
 
     if (!data) {
@@ -143,7 +124,7 @@ export class DetaDatabaseService {
       const pwData = (await base.get(
         previousWeek.toString()
       )) as unknown as weekBucket;
-      const paylaod = {
+      const payload = {
         key: dt.toString(),
         count: updates.count,
         sum: updates.sum,
@@ -151,12 +132,39 @@ export class DetaDatabaseService {
       };
       if (pwData) {
         const pvAverage = Math.round(pwData.sum / pwData.count) || 0;
-        paylaod.target = Math.max(pvAverage, pwData.target);
+        payload.target = Math.max(pvAverage, pwData.target);
       }
-      await base.insert(paylaod);
+      await base.insert(payload);
     }
     return true;
   }
+
+  async SetWeekTarget(channelName: string, key: string, target: number) {
+    assert.ok(this.#allowedChannels.has(channelName));
+
+
+    const base = this.#deta.Base(channelName);
+    try{
+    await base.update(
+      {
+        target,
+      },
+      key
+    );
+    }catch(err){
+      if ((err as Error).message != "Key not found") {
+        throw err;
+      }
+      const payload={
+        key: key,
+        count: 0,
+        sum: 0,
+        target,
+      };
+      await base.insert(payload);
+    }
+  }
+
   /**
    *
    * @returns A list of all channels in database

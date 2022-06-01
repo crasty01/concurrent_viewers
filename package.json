@@ -18,7 +18,6 @@
   "homepage": "https://github.com/crasty01/concurrent_viewers#readme",
   "workspaces":[
     "client",
-    "server",
-    "deta_api"
+    "server"
   ]
 }

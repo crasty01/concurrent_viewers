@@ -1,7 +1,9 @@
 import dayjs, { Dayjs } from "dayjs";
 import isoweek from "dayjs/plugin/isoWeek";
+import duration from "dayjs/plugin/duration";
 
 dayjs.extend(isoweek);
+dayjs.extend(duration);
 
 export interface weekBucket {
   sum: number;
