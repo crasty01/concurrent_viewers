@@ -23,4 +23,4 @@ const db = new DetaDatabaseService(
   channels.map((x) => x.toLowerCase())
 );
 
-new ApiServer(db, authSvc, sessSvc).listen(env.PORT);
+new ApiServer(db, authSvc, sessSvc).listen(parseInt(env.PORT));

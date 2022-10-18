@@ -5,6 +5,7 @@ import { getIsoYearWeek } from "$/lib/util";
 
 import { toPayload } from "./weeks";
 import dayjs from "dayjs";
+import { FastifyAuthFunction } from "@fastify/auth";
 const bPrefix = "Bearer ";
 
 function extractAuthHeader(authHeader: string | undefined) {
@@ -26,7 +27,7 @@ declare module "fastify" {
   }
 }
 
-export function AuthMiddleware(sesssvc: SessionService) {
+export function AuthMiddleware(sesssvc: SessionService): FastifyAuthFunction {
   return async (
     request: FastifyRequest,
     reply: FastifyReply,

@@ -6,6 +6,7 @@ interface Env extends DotenvParseOutput {
   TWITCH_CLIENT_ID: string;
   TWITCH_CLIENT_SECRET: string;
   ACCESS_URL: string;
+  PORT: string;
 }
 
 export const env = config().parsed as Env;

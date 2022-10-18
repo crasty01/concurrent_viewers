@@ -13,7 +13,7 @@
   "author": "Daniel Vondra (http://danielvondra.tk/)",
   "license": "MIT",
   "dependencies": {
-    "@fastify/auth": "^2.0.0",
+    "@fastify/auth": "^4.1.0",
     "@fastify/cookie": "^6.0.0",
     "@fastify/cors": "^8.1.0",
     "@types/fastify-cors": "^2.1.0",
@@ -21,8 +21,7 @@
     "dayjs": "^1.10.8",
     "deta": "^1.0.2",
     "dotenv": "^16.0.0",
-    "fastify": "^3.29.0",
-    "fastify-cors": "^6.0.3",
+    "fastify": "^4.9.2",
     "module-alias": "^2.2.2",
     "node-fetch": "^2.6.7",
     "openid-client": "^5.1.6",
