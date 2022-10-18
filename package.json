@@ -1,6 +1,7 @@
 {
   "name": "concurrent_viewers",
   "version": "1.0.0",
+  "private": true,
   "description": "Concurrent viewer counter monorepo",
   "main": "index.js",
   "scripts": {
