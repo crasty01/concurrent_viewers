@@ -15,6 +15,8 @@
   "dependencies": {
     "@fastify/auth": "^2.0.0",
     "@fastify/cookie": "^6.0.0",
+    "@fastify/cors": "^8.1.0",
+    "@types/fastify-cors": "^2.1.0",
     "cron": "^1.8.2",
     "dayjs": "^1.10.8",
     "deta": "^1.0.2",

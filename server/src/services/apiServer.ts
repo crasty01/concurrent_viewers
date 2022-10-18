@@ -1,5 +1,5 @@
 import Fastify, { FastifyInstance } from "fastify";
-import fastifyCors from "fastify-cors";
+import fastifyCors from "@fastify/cors";
 import cookie from "@fastify/cookie";
 
 import { DetaDatabaseService } from "$/services/DetaDb";
