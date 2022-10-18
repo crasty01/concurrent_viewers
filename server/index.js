@@ -11,9 +11,7 @@ const { ApiServer } = require("$/services/apiServer")
 const { Scaper } = require("$/services/scraper")
 
 const channels = [
-    'cdubya719',
     'KrazeyHazey',
-    "treiniota",
 ]
 
 
