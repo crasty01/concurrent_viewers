@@ -13,11 +13,14 @@ import {
 import { GetCurrentMetric, GetTimestampMetric } from "./endpoints/weeks";
 import { Login, LoginTwitchCallback, logout as Logout } from "./endpoints/auth";
 import fastifyAuth, { FastifyAuthFunction } from "@fastify/auth";
+import { DetaActionHandler } from "./endpoints/deta";
+import { Api } from "$/lib/twitch";
+import { Scaper } from "./scraper";
 
 
 declare module 'fastify' {
   interface FastifyInstance<RawServer, RawRequest, RawReply, Logger, TypeProvider> {
-    authmddle:FastifyAuthFunction
+    authmddle: FastifyAuthFunction
   }
 }
 
@@ -26,15 +29,18 @@ export class ApiServer {
   #sessSvc: SessionService;
   #authSvc: AuthService;
   app: FastifyInstance;
+  #twtichScraper: Scaper;
 
   constructor(
     dbService: DetaDatabaseService,
     authSvc: AuthService,
-    sessSvc: SessionService
+    sessSvc: SessionService,
+    twtichScraper: Scaper
   ) {
     this.#dbService = dbService;
     this.#sessSvc = sessSvc;
     this.#authSvc = authSvc;
+    this.#twtichScraper = twtichScraper;
     this.app = this.#prepareServer();
   }
 
@@ -45,6 +51,8 @@ export class ApiServer {
     api.register(fastifyCors, {
       origin: "*",
     });
+
+    api.post("/__space/v0/actions", DetaActionHandler(this.#twtichScraper));
 
     api.get(
       "/channel/:channel/week/:timestamp",
@@ -62,7 +70,7 @@ export class ApiServer {
     api.get("/:channel/week-current", GetCurrentMetric(this.#dbService));
 
     api
-      .decorate('authmddle',AuthMiddleware(this.#sessSvc))
+      .decorate('authmddle', AuthMiddleware(this.#sessSvc))
       .decorateRequest("uid", undefined)
       .decorateRequest("authToken", undefined)
       .register(require('@fastify/auth'))
@@ -96,7 +104,7 @@ export class ApiServer {
   }
 
   public listen(port: number) {
-    this.app.listen({port}, (err, address) => {
+    this.app.listen({ port }, (err, address) => {
       if (err) this.app.log.error(err);
       console.log(`api running at ${address}`);
     });

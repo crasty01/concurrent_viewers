@@ -1,0 +1,28 @@
+# Spacefile Docs: https://go.deta.dev/docs/spacefile/v0
+v: 0
+micros:
+  - name: server
+    src: .
+    engine: nodejs16
+    run: "node dist/main.js"
+    primary: true
+    commands:
+      - yarn
+      - yarn build
+    include:
+      - dist/
+      - package.json
+    public_routes:
+      - "/*"
+    presets:
+      env:
+        - name: TWITCH_CLIENT_ID
+        - name: TWITCH_CLIENT_SECRET
+        - name: CUSTOM_DETA_PROJECT_KEY
+        - name: TWITCH_SCRAPE_CHANNELS
+    actions:
+      - id: "scrape"
+        name: "Scrape"
+        description: "Scrape twtich api"
+        trigger: "schedule"
+        default_interval: "* * * * *"
